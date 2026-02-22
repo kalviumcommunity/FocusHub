@@ -1,42 +1,36 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Stack } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import LoadingScreen from "./loadingscreen";
+import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+
 export default function RootLayout() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFirstLaunch, setIsFirstLaunch] = useState(null);
-
   useEffect(() => {
-    const checkFirstLaunch = async () => {
+    GoogleSignin.configure({
+      webClientId: '960111871354-o2o0q7neim7rfc04uq87pnjekfq8mhg6.apps.googleusercontent.com',
+    });
+
+    async function requestPermissions() {
       try {
-        const hasLaunched = await AsyncStorage.getItem("hasLaunched");
-        if (hasLaunched === null) {
-          setIsFirstLaunch(true);
-          await AsyncStorage.setItem("hasLaunched", "true");
-        } else {
-          setIsFirstLaunch(false);
+        if (Platform.OS === 'android' || Platform.OS === 'ios') {
+          const { status } = await Notifications.getPermissionsAsync();
+          if (status !== "granted") {
+            await Notifications.requestPermissionsAsync();
+          }
         }
-      } catch (e) {
-        setIsFirstLaunch(false);
-      } finally {
-        setTimeout(() => setIsLoading(false), 2000);
+      } catch (err) {
+        console.log("Notification permission error:", err);
       }
-    };
-    checkFirstLaunch();
+    }
+    requestPermissions();
   }, []);
-
-  if (isLoading || isFirstLaunch === null) return <LoadingScreen />;
-
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      {isFirstLaunch ? (
-        <Stack.Screen name="onboardingscreen" options={{ headerShown: false }} />
-      ) : (
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-      )}
-      <Stack.Screen name="home" />
-      {/* <Stack.Screen name="signin" options={{ headerShown: false }} />
-      <Stack.Screen name="signup" options={{ headerShown: false }} /> */}
+      <Stack.Screen name="index" />
+      <Stack.Screen name="onboardingscreen" />
+      <Stack.Screen name="signin" />
+      <Stack.Screen name="signup" />
+      <Stack.Screen name="(tabs)" />
     </Stack>
   );
 }

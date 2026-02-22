@@ -8,8 +8,11 @@ import {
   StyleSheet,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
+import auth from '@react-native-firebase/auth';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const SignupScreen = () => {
   const [name, setName] = useState('');
@@ -29,10 +32,24 @@ const SignupScreen = () => {
     router.replace('/signin'); // Navigate to Sign In after successful sign up
   };
 
+  const handleGoogleSignUp = async () => {
+    try {
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const { idToken } = await GoogleSignin.signIn();
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+      await auth().signInWithCredential(googleCredential);
+      Alert.alert('Success', 'Google Sign-up successful!');
+      router.replace('/(tabs)/home'); // Navigate to home
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Google Sign-up Error', error.message || 'Something went wrong');
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Back Button */}
-      
+
 
       <Text style={styles.title}>Join FocusHub Today!</Text>
       <Text style={styles.subtitle}>
@@ -96,7 +113,7 @@ const SignupScreen = () => {
           <Picker.Item label="Select Role" value="" />
           <Picker.Item label="Manager" value="Manager" />
           <Picker.Item label="Professional" value="professional" />
-  
+
         </Picker>
       </View>
 
@@ -105,14 +122,19 @@ const SignupScreen = () => {
         <Text style={styles.buttonText}>Sign up</Text>
       </TouchableOpacity>
 
+      <Text style={styles.orText}>- OR -</Text>
+
+      <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignUp}>
+        <FontAwesome name="google" size={20} color="#000" />
+        <Text style={styles.googleButtonText}>Continue with Google</Text>
+      </TouchableOpacity>
+
       {/* Sign in link */}
       <View style={styles.footerTextContainer}>
         <Text>Already have an account?</Text>
-        <a href="/signin">
         <TouchableOpacity onPress={() => router.push('/signin')}>
           <Text style={styles.signinLink}> Sign in</Text>
         </TouchableOpacity>
-        </a>
       </View>
     </View>
   );
@@ -184,6 +206,28 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  orText: {
+    textAlign: 'center',
+    marginVertical: 16,
+    color: '#888',
+    fontWeight: '500',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f5f5f5',
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  googleButtonText: {
+    color: '#000',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginLeft: 10,
   },
   footerTextContainer: {
     flexDirection: 'row',

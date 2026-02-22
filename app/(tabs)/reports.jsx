@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
-import { BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
-import { PieChart, Pie, Cell } from "recharts";
 import BottomNav from "../bottomnav";
 
 // 🔹 Dummy Backend Function
@@ -54,49 +52,48 @@ export default function ReportsScreen() {
     return <ActivityIndicator size="large" style={{ flex: 1, justifyContent: "center" }} />;
   }
 
-  const COLORS = ["#FF4749", "#FF8A65", "#FFD54F", "#4FC3F7", "#81C784", "#BA68C8"];
-
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Reports</Text>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Focus Time */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Focus Time</Text>
-          <Text>Total: {reportData.focusTime.totalHours} hr</Text>
-          <Text>Avg: {reportData.focusTime.avgHours} hr</Text>
-          <Text>Sessions: {reportData.focusTime.totalSessions}</Text>
+          <Text style={styles.cardTitle}>Focus Time Overview</Text>
+          <Text style={styles.metricText}>Total Hours: <Text style={styles.bold}>{reportData.focusTime.totalHours} hr</Text></Text>
+          <Text style={styles.metricText}>Avg Daily: <Text style={styles.bold}>{reportData.focusTime.avgHours} hr</Text></Text>
+          <Text style={styles.metricText}>Total Sessions: <Text style={styles.bold}>{reportData.focusTime.totalSessions}</Text></Text>
 
-          <BarChart width={300} height={200} data={reportData.focusTime.data}>
-            <XAxis dataKey="day" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="hours" fill="#FF4749" radius={[8, 8, 0, 0]} />
-          </BarChart>
+          <View style={styles.divider} />
+
+          <Text style={styles.sectionTitle}>Daily Breakdown (Last 7 Days)</Text>
+          {reportData.focusTime.data.map((item, index) => (
+            <View key={index} style={styles.rowItem}>
+              <Text style={styles.rowLabel}>Day {item.day}</Text>
+              <View style={styles.barBackground}>
+                <View style={[styles.barFill, { width: `${(item.hours / 8) * 100}%` }]} />
+              </View>
+              <Text style={styles.rowValue}>{item.hours} hr</Text>
+            </View>
+          ))}
         </View>
 
         {/* Project Time Distribution */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Project Time Distribution</Text>
-          <Text>Total: {reportData.projectDistribution.totalHours} hr</Text>
+          <Text style={styles.cardTitle}>Project Distribution</Text>
+          <Text style={styles.metricText}>Total Project Hours: <Text style={styles.bold}>{reportData.projectDistribution.totalHours} hr</Text></Text>
 
-          <PieChart width={300} height={250}>
-            <Pie
-              data={reportData.projectDistribution.data}
-              dataKey="hours"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              outerRadius={80}
-              label
-            >
-              {reportData.projectDistribution.data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
+          <View style={styles.divider} />
+
+          {reportData.projectDistribution.data.map((entry, index) => (
+            <View key={index} style={styles.rowItem}>
+              <Text style={[styles.rowLabel, { flex: 2 }]}>{entry.name}</Text>
+              <Text style={styles.rowValue}>{entry.hours} hr</Text>
+              <Text style={styles.rowPercentage}>
+                {Math.round((entry.hours / reportData.projectDistribution.totalHours) * 100)}%
+              </Text>
+            </View>
+          ))}
         </View>
       </ScrollView>
 
@@ -106,7 +103,7 @@ export default function ReportsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FAFAFA", padding: 15 },
+  container: { flex: 1, backgroundColor: "#FAFAFA", padding: 15, paddingTop: 40 },
   header: { fontSize: 20, fontWeight: "700", marginBottom: 20, textAlign: "center" },
   card: {
     backgroundColor: "white",
@@ -119,4 +116,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardTitle: { fontSize: 16, fontWeight: "600", marginBottom: 10 },
+  sectionTitle: { fontSize: 14, fontWeight: "600", color: "#666", marginBottom: 10 },
+  metricText: { fontSize: 14, color: "#444", marginBottom: 4 },
+  bold: { fontWeight: "bold", color: "#222" },
+  divider: { height: 1, backgroundColor: "#eee", marginVertical: 15 },
+  rowItem: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  rowLabel: { width: 60, fontSize: 13, color: "#555" },
+  rowValue: { width: 50, fontSize: 13, fontWeight: "600", textAlign: "right" },
+  rowPercentage: { width: 40, fontSize: 13, color: "#FF4749", textAlign: "right", fontWeight: "bold" },
+  barBackground: { flex: 1, height: 8, backgroundColor: "#eee", borderRadius: 4, marginHorizontal: 10, overflow: "hidden" },
+  barFill: { height: "100%", backgroundColor: "#FF4749", borderRadius: 4 },
 });

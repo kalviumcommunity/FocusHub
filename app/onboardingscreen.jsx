@@ -1,6 +1,7 @@
 import { View, Text, Pressable, StyleSheet, Dimensions } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // 👈 import
 
 const { width } = Dimensions.get("window");
 
@@ -9,7 +10,15 @@ export default function OnboardingScreen() {
   const [hoveredButton, setHoveredButton] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem("hasLaunched", "true");
+    const markAsLaunched = async () => {
+      try {
+        await AsyncStorage.setItem("hasLaunched", "true"); // 👈 replacement for localStorage
+      } catch (err) {
+        console.warn("Failed to set hasLaunched", err);
+      }
+    };
+
+    markAsLaunched();
   }, []);
 
   return (
@@ -18,7 +27,7 @@ export default function OnboardingScreen() {
       <Text style={styles.subtitle}>Let’s get started with FocusHub!</Text>
 
       <View style={styles.buttonsWrapper}>
-        <Link href="/signin" style={styles.link}>
+        <View style={styles.link}>
           <Pressable
             style={({ pressed }) => [
               styles.button,
@@ -27,6 +36,7 @@ export default function OnboardingScreen() {
             ]}
             onHoverIn={() => setHoveredButton("signin")}
             onHoverOut={() => setHoveredButton(null)}
+            onPress={() => router.push("/signin")}
           >
             <Text
               style={[
@@ -37,9 +47,9 @@ export default function OnboardingScreen() {
               Sign In
             </Text>
           </Pressable>
-        </Link>
+        </View>
 
-        <Link href="/signup" style={styles.link}>
+        <View style={styles.link}>
           <Pressable
             style={({ pressed }) => [
               styles.button,
@@ -48,6 +58,7 @@ export default function OnboardingScreen() {
             ]}
             onHoverIn={() => setHoveredButton("signup")}
             onHoverOut={() => setHoveredButton(null)}
+            onPress={() => router.push("/signup")}
           >
             <Text
               style={[
@@ -58,7 +69,7 @@ export default function OnboardingScreen() {
               Sign Up
             </Text>
           </Pressable>
-        </Link>
+        </View>
       </View>
     </View>
   );

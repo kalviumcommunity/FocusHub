@@ -2,7 +2,6 @@ import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { router } from "expo-router";
-import { Link } from "expo-router"; // ✅ for linking to other screens
 
 export default function BottomNav({ currentTab }) {
   const [navTab, setNavTab] = useState(currentTab || "Home");
@@ -14,43 +13,7 @@ export default function BottomNav({ currentTab }) {
 
   return (
     <View style={styles.bottomNav}>
-        <Link href="/home">
-      <Pressable style={styles.navItem} onPress={() => goTo("Home", "/home")}>
-        <Ionicons
-          name="home"
-          size={22}
-          color={navTab === "Home" ? "#FF4749" : "gray"}
-        />
-        <Text
-          style={[
-            styles.navText,
-            { color: navTab === "Home" ? "#FF4749" : "gray" },
-          ]}
-        >
-          Home
-        </Text>
-      </Pressable>
-      </Link>
 
-      <Link href='/tasks'>
-      <Pressable style={styles.navItem} onPress={() => goTo("Tasks", "/tasks")}>
-        <Ionicons
-          name="document-text-outline"
-          size={22}
-          color={navTab === "Tasks" ? "#FF4749" : "gray"}
-        />
-        <Text
-          style={[
-            styles.navText,
-            { color: navTab === "Tasks" ? "#FF4749" : "gray" },
-          ]}
-        >
-          Tasks
-        </Text>
-      </Pressable>
-      </Link>
-
-      <Link href='/teams'>
       <Pressable style={styles.navItem} onPress={() => goTo("Teams", "/teams")}>
         <Ionicons
           name="people-outline"
@@ -66,9 +29,38 @@ export default function BottomNav({ currentTab }) {
           Teams
         </Text>
       </Pressable>
-      </Link>
+      <Pressable style={styles.navItem} onPress={() => goTo("Tasks", "/tasks")}>
+        <Ionicons
+          name="document-text-outline"
+          size={22}
+          color={navTab === "Tasks" ? "#FF4749" : "gray"}
+        />
+        <Text
+          style={[
+            styles.navText,
+            { color: navTab === "Tasks" ? "#FF4749" : "gray" },
+          ]}
+        >
+          Tasks
+        </Text>
+      </Pressable>
 
-      <Link href='/reports'>
+
+      <Pressable style={styles.navItem} onPress={() => goTo("Home", "/home")}>
+        <Ionicons
+          name="home"
+          size={22}
+          color={navTab === "Home" ? "#FF4749" : "gray"}
+        />
+        <Text
+          style={[
+            styles.navText,
+            { color: navTab === "Home" ? "#FF4749" : "gray" },
+          ]}
+        >
+          Home
+        </Text>
+      </Pressable>
       <Pressable
         style={styles.navItem}
         onPress={() => goTo("Reports", "/reports")}
@@ -87,9 +79,7 @@ export default function BottomNav({ currentTab }) {
           Reports
         </Text>
       </Pressable>
-      </Link>
 
-        <Link href='/profile'>
       <Pressable
         style={styles.navItem}
         onPress={() => goTo("Profile", "/profile")}
@@ -108,7 +98,6 @@ export default function BottomNav({ currentTab }) {
           Profile
         </Text>
       </Pressable>
-      </Link>
     </View>
   );
 }
@@ -116,7 +105,7 @@ export default function BottomNav({ currentTab }) {
 const styles = StyleSheet.create({
   bottomNav: {
     position: "absolute",
-    bottom: 0,
+    bottom: 10,
     left: 0,
     right: 0,
     flexDirection: "row",

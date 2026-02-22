@@ -9,7 +9,10 @@ import {
   Keyboard,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
+import auth from '@react-native-firebase/auth';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const SigninScreen = () => {
   const [email, setEmail] = useState('');
@@ -28,8 +31,22 @@ const SigninScreen = () => {
     setSignedIn(true);  // Set signed-in state true, show home button
   };
 
+  const handleGoogleSignIn = async () => {
+    try {
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const { idToken } = await GoogleSignin.signIn();
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+      await auth().signInWithCredential(googleCredential);
+      Alert.alert('Success', 'Google Sign-in successful!');
+      router.replace('/(tabs)/home'); // Navigate to home
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Google Sign-in Error', error.message || 'Something went wrong');
+    }
+  };
+
   const handleGoHome = () => {
-    router.push('/home'); // Navigate to homepage on button press
+    router.push('/(tabs)/home'); // Navigate to homepage on button press
   };
 
   const handleSignUpPress = () => {
@@ -83,12 +100,17 @@ const SigninScreen = () => {
           <Text style={styles.buttonText}>Sign in</Text>
         </TouchableOpacity>
       ) : (
-        <a href="/home">
         <TouchableOpacity style={[styles.button, { backgroundColor: '#4CAF50' }]} onPress={handleGoHome}>
           <Text style={styles.buttonText}>Go to Home</Text>
         </TouchableOpacity>
-        </a>
       )}
+
+      <Text style={styles.orText}>- OR -</Text>
+
+      <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn}>
+        <FontAwesome name="google" size={20} color="#000" />
+        <Text style={styles.googleButtonText}>Continue with Google</Text>
+      </TouchableOpacity>
 
       <View style={styles.footerTextContainer}>
         <Text>Don’t have an account?</Text>
@@ -150,6 +172,28 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  orText: {
+    textAlign: 'center',
+    marginVertical: 16,
+    color: '#888',
+    fontWeight: '500',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f5f5f5',
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  googleButtonText: {
+    color: '#000',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginLeft: 10,
   },
   footerTextContainer: {
     flexDirection: 'row',

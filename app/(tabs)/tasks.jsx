@@ -2,44 +2,20 @@ import { View, Text, StyleSheet, Pressable, FlatList, TextInput, Modal } from "r
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import BottomNav from "../bottomnav";
+import { useAppStore } from "../store/useAppStore";
 
 export default function TasksScreen() {
   const [taskTab, setTaskTab] = useState("Active");
-  const [activeTasks, setActiveTasks] = useState([]);
-  const [completedTasks, setCompletedTasks] = useState([]);
   const [taskTimers, setTaskTimers] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [newTask, setNewTask] = useState("");
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Dummy backend
-  const mockBackend = {
-    fetchTasks: async () => {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({
-            active: [
-              { id: "1", title: "Create a React app", progress: "4/6 • 100/150 mins" },
-              { id: "2", title: "Market Research & Analysis", progress: "3/5 • 80/120 mins" },
-            ],
-            completed: [
-              { id: "3", title: "UI Design for Dashboard", progress: "Done" },
-              { id: "4", title: "Client Presentation", progress: "Done" },
-            ],
-          });
-        }, 1000);
-      });
-    },
-  };
-
-  // Load tasks
-  useEffect(() => {
-    const loadTasks = async () => {
-      const data = await mockBackend.fetchTasks();
-      setActiveTasks(data.active);
-      setCompletedTasks(data.completed);
-    };
-    loadTasks();
-  }, []);
+  // Connect to Global Store
+  const { activeTasks, completedTasks, addTask, removeTask, completeTask } = useAppStore();
 
   // Handle Play/Pause
   const toggleTaskTimer = (taskId) => {
@@ -98,16 +74,19 @@ export default function TasksScreen() {
       id: Date.now().toString(),
       title: newTask,
       progress: "0/1 • 0/60 mins",
+      deadlineTime: newTime || "Not Set",
+      deadlineDate: newDate || "Not Set"
     };
-    setActiveTasks((prev) => [...prev, newTaskObj]);
+    addTask(newTaskObj); // Save to Zustand
     setNewTask("");
+    setNewDate("");
+    setNewTime("");
     setShowModal(false);
   };
 
   // Delete task
   const handleDeleteTask = (id) => {
-    setActiveTasks((prev) => prev.filter((t) => t.id !== id));
-    setCompletedTasks((prev) => prev.filter((t) => t.id !== id));
+    removeTask(id);
     setTaskTimers((prev) => {
       const newTimers = { ...prev };
       delete newTimers[id];
@@ -117,32 +96,42 @@ export default function TasksScreen() {
 
   // ✅ Mark as Completed
   const handleMarkCompleted = (id) => {
-    const task = activeTasks.find((t) => t.id === id);
-    if (task) {
-      setActiveTasks((prev) => prev.filter((t) => t.id !== id));
-      setCompletedTasks((prev) => [
-        ...prev,
-        { ...task, progress: "Done", completedAt: new Date().toLocaleTimeString() },
-      ]);
-      setTaskTimers((prev) => {
-        const newTimers = { ...prev };
-        delete newTimers[id];
-        return newTimers;
-      });
-    }
+    completeTask(id);
+    setTaskTimers((prev) => {
+      const newTimers = { ...prev };
+      delete newTimers[id];
+      return newTimers;
+    });
   };
 
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <Ionicons name="refresh-outline" size={22} color="#FF4749" />
-        <Text style={styles.title}>Tasks</Text>
-        <View style={styles.headerIcons}>
-          <Ionicons name="search-outline" size={22} color="black" style={{ marginRight: 15 }} />
-          <Ionicons name="ellipsis-vertical" size={22} color="black" />
+      {!isSearching ? (
+        <View style={styles.header}>
+          <Ionicons name="refresh-outline" size={22} color="#FF4749" />
+          <Text style={styles.title}>Tasks</Text>
+          <View style={styles.headerIcons}>
+            <Pressable onPress={() => setIsSearching(true)} style={{ marginRight: 15 }}>
+              <Ionicons name="search-outline" size={22} color="black" />
+            </Pressable>
+            <Ionicons name="ellipsis-vertical" size={22} color="black" />
+          </View>
         </View>
-      </View>
+      ) : (
+        <View style={[styles.header, { backgroundColor: "white", padding: 10, borderRadius: 10 }]}>
+          <TextInput
+            style={{ flex: 1, fontSize: 16 }}
+            placeholder="Search tasks..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoFocus
+          />
+          <Pressable onPress={() => { setIsSearching(false); setSearchQuery(""); }}>
+            <Text style={{ color: "gray", fontWeight: "600", marginLeft: 10 }}>Cancel</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* Tabs */}
       <View style={styles.tabContainer}>
@@ -162,7 +151,7 @@ export default function TasksScreen() {
 
       {/* Task List */}
       <FlatList
-        data={taskTab === "Active" ? activeTasks : completedTasks}
+        data={(taskTab === "Active" ? activeTasks : completedTasks).filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()))}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
           const timer = taskTimers[item.id];
@@ -175,9 +164,15 @@ export default function TasksScreen() {
                   {taskTab === "Completed"
                     ? item.progress
                     : timer
-                    ? formatTime(timer.elapsed)
-                    : item.progress}
+                      ? formatTime(timer.elapsed)
+                      : item.progress}
                 </Text>
+
+                {/* Render Deadlines if they exist */}
+                {item.deadlineTime && item.deadlineTime !== "Not Set" && taskTab === "Active" && (
+                  <Text style={styles.deadlineText}>⏰ {item.deadlineDate} @ {item.deadlineTime}</Text>
+                )}
+
                 {timer?.endTime && (
                   <Text style={styles.taskEndTime}>Ended at {timer.endTime}</Text>
                 )}
@@ -229,6 +224,20 @@ export default function TasksScreen() {
               value={newTask}
               onChangeText={setNewTask}
             />
+            <View style={{ flexDirection: "row", gap: 10, marginBottom: 15 }}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                placeholder="Date (e.g. 12/04)"
+                value={newDate}
+                onChangeText={setNewDate}
+              />
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                placeholder="Time (e.g. 14:30)"
+                value={newTime}
+                onChangeText={setNewTime}
+              />
+            </View>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
               <Pressable style={styles.modalBtn} onPress={() => setShowModal(false)}>
                 <Text style={{ color: "#555" }}>Cancel</Text>
@@ -251,7 +260,7 @@ export default function TasksScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FAFAFA", padding: 15 },
+  container: { flex: 1, backgroundColor: "#FAFAFA", padding: 25, marginTop: 25 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
   title: { fontSize: 20, fontWeight: "700", color: "#222" },
   headerIcons: { flexDirection: "row" },
@@ -275,6 +284,7 @@ const styles = StyleSheet.create({
   taskTitle: { fontWeight: "600", fontSize: 16, color: "#222" },
   taskProgress: { fontSize: 13, color: "gray" },
   taskEndTime: { fontSize: 12, color: "gray", marginTop: 2 },
+  deadlineText: { fontSize: 12, color: "#FF4749", fontWeight: "600", marginTop: 4 },
   addButton: {
     position: "absolute",
     bottom: 70,

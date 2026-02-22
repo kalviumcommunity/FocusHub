@@ -1,20 +1,9 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { View, ActivityIndicator, StyleSheet, Image, Dimensions } from "react-native";
-import { useRouter } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
 export default function LoadingScreen() {
-  const router = useRouter();
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      router.push("/onboardingscreen");
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <View style={styles.container}>
       {/* Image Logo */}
